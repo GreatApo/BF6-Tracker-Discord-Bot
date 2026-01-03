@@ -1,0 +1,10 @@
+{
+  "token": "DISCORD_BOT_TOKEN",
+  "channel_id": 1234567890,
+  "check_interval_minutes": 15,
+  "inactivity_threshold_minutes": 45,
+  "players": [
+    "EA_Username_1",
+    "EA_Username_2"
+  ]
+}

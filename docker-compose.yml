@@ -1,0 +1,12 @@
+version: "3.9"
+
+services:
+  bf-tracker-bot:
+    image: python:3.11-slim
+    container_name: bf-tracker-bot
+    working_dir: /app
+    command: bash -c "pip install --no-cache-dir -r requirements.txt && python bot.py"
+    volumes:
+      - ./:/app                # Mount entire bot folder
+      - ./logs:/app/logs       # Logs directory (optional if bot writes to logs/)
+    restart: unless-stopped
