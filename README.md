@@ -26,9 +26,9 @@ All commands use the `!bf` prefix to avoid conflicts:
 |---------|-------------|
 | `!bf help` | Show help message |
 | `!bf players` | List monitored players |
-| `!bf addplayer <username>` | Add a player to monitor *(Admin only)* |
-| `!bf removeplayer <username>` | Remove a player from monitoring *(Admin only)* |
-| `!bf checkplayer <username>` | Fetch and display API stats for a player |
+| `!bf addplayer <EA username>` | Add a player to monitor *(Admin only)* |
+| `!bf removeplayer <EA username>` | Remove a player from monitoring *(Admin only)* |
+| `!bf checkplayer <EA username>` | Fetch and display API stats for a player |
 
 ## Docker Setup
 
