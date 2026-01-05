@@ -5,6 +5,7 @@ import time
 import json
 import os
 import logging
+import random
 from logging.handlers import RotatingFileHandler
 from pprint import pformat
 
@@ -48,6 +49,26 @@ TOKEN = config["token"]
 CHANNEL_ID = config["channel_id"]
 CHECK_INTERVAL = config["check_interval_minutes"] * 60
 INACTIVITY_THRESHOLD = config["inactivity_threshold_minutes"] * 60
+
+RAMPAGE_MESSAGES = [
+    "🎮 **{player}** is on a rampage, racking up 💀 {kills} kills!",
+    "🔥 **{player}** is mowing down enemies with 💀 {kills} fresh kills!",
+    "⚡ **{player}** is lighting up the battlefield with 💀 {kills} kills!",
+    "💥 **{player}** is unstoppable! 💀 {kills} more down!",
+    "🚀 **{player}** is sending opponents flying: 💀 {kills} kills this run!",
+    "🎯 **{player}** can't miss—another 💀 {kills} on the board!",
+    "🛡️ **{player}** is holding the line with 💀 {kills} confirmed!",
+    "🌪️ **{player}** is tearing through squads: 💀 {kills} gone!",
+    "⚙️ **{player}** just tuned up the scoreboard with 💀 {kills} kills!",
+    "📡 **{player}** is on everyone's radar—💀 {kills} and counting!"
+]
+
+ZERO_KILL_MESSAGES = [
+    "🎮 **{player}** just spawned and is already sightseeing.",
+    "🧭 **{player}** is lost and asking enemies for directions.",
+    "🛡️ **{player}** is roleplaying a traffic cone—still 0 kills.",
+    "📻 **{player}** called for backup; nobody answered because... 0 kills."
+]
 
 API_URL = (
     "https://api.gametools.network/bf6/stats/"
@@ -146,44 +167,38 @@ async def check_players():
                 logger.debug(f"Initialized state for {player}")
                 continue
             
-            was_playing = state["playing"]
-            
             # Check if play time has changed
             if stats["secondsPlayed"] != state["seconds_played"]:
-
-                # If player was not playing before, send notification
-                if not was_playing:
-                    logger.info(f"Activity detected for {player}")
-                    await channel.send(f"🎮 **{player}** has played again!\n")
-                else:
-                    logger.debug(f"{player} is still playing")
-                    session_kills = max(stats["kills"] - state["kills"], 0)
-                    await channel.send(f"🎮 **{player}** is on a rampage, racking up {session_kills} kills!")
-
-                # Update records
-                state["last_check"] = now
-                state["playing"] = True
-
-            # Check if player stopped playing
-            elif was_playing and (now - state["last_check"]) >= INACTIVITY_THRESHOLD:
+                # Player is currently playing
                 session_kills = max(stats["kills"] - state["kills"], 0)
-                session_min = round( (stats["secondsPlayed"] - state["seconds_played"]) / 60, 0)
+                if session_kills > 0:
+                    message = random.choice(RAMPAGE_MESSAGES).format(
+                        player=player,
+                        kills=session_kills
+                    )
+                else:
+                    message = random.choice(ZERO_KILL_MESSAGES).format(
+                        player=player
+                    )
 
-                logger.info(
-                    f"Inactivity detected for {player} | "
-                    f"Seconds played: {state['seconds_played']} -> {stats['secondsPlayed']} | "
-                    f"Kills gained: {session_kills}"
-                )
+                await channel.send(message)
 
                 # Update records
                 state["seconds_played"] = stats["secondsPlayed"]
                 state["kills"] = stats["kills"]
+                state["last_check"] = now
+                state["playing"] = True
+
+            # Check if player stopped playing
+            elif state["playing"] and (now - state["last_check"]) >= INACTIVITY_THRESHOLD:
+                logger.info(
+                    f"Inactivity detected for {player}"
+                )
+
+                # Update records
                 state["playing"] = False
                 
-                await channel.send(f"🎮 **{player}** stopped playing after claiming 💀 **{session_kills}** souls in ⏱️ {session_min} minutes.")
-
-                # f"⏱️ Time played: **{round(session_min, 0)} min**\n"
-                # f"💀 Kills this session: **{max(session_kills, 0)}**"
+                # await channel.send(f"🎮 **{player}** stopped playing after claiming 💀 **{session_kills}** souls in ⏱️ {session_min} minutes.")
 
         save_state(player_state)
 
